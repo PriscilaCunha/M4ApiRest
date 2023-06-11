@@ -6,6 +6,26 @@ const jwt = require('jsonwebtoken');
 app.use(express.json());
 
 const secret = 'secret_123';
+
+app.use((req, res, next) => {
+    try {
+        // Permite acesso à rota /auth sem a necessidade do token
+        if (req.originalUrl == '/auth') {
+            return next()
+        }
+        
+        // Pega o token de autorização do cabeçalho
+        const {headers} = req;
+        const authorization = headers.authorization ? headers.authorization.replace('Bearer', '').trim() : '';
+        // Verifica se o token é válido, foi assinado corretamente e não expirou
+        jwt.verify(authorization, secret, {algorithm: 'HS256'});
+        return next;
+        
+    } catch (error) {
+        return res.status(401).json({message: 'Token inváido!'})
+    }
+});
+
 app.post('/auth', async (req, res) => {
     const file = JSON.parse( await fs.readFile('./users.json', 'utf-8') );
     // Verifica no arquivo se usuario existe
